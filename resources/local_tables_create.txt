@@ -1,0 +1,30 @@
+
+Table with registered controller types:
+CREATE TABLE "controller_types" (
+	"id"	INTEGER NOT NULL,
+	"type"	TEXT NOT NULL,
+	PRIMARY KEY("id" AUTOINCREMENT)
+)
+
+Table with controllers in system:
+CREATE TABLE "controllers" (
+	"id"	INTEGER NOT NULL UNIQUE,
+	"name"	INTEGER,
+	"modbus_uid"	INTEGER NOT NULL UNIQUE,
+	"type"	INTEGER NOT NULL,
+	"scan_on"	INTEGER NOT NULL DEFAULT 1,
+	FOREIGN KEY("type") REFERENCES "controller_types"("id"),
+	PRIMARY KEY("id" AUTOINCREMENT)
+)
+
+Table with realtime data:
+CREATE TABLE "realtime_values" (
+	"id"	INTEGER,
+	"controller_id"	INTEGER NOT NULL,
+	"register_address"	INTEGER NOT NULL,
+	"timestamp"	INTEGER NOT NULL,
+	"value"	REAL NOT NULL,
+	"register_type"	INTEGER NOT NULL DEFAULT 3,
+	FOREIGN KEY("controller_id") REFERENCES "controllers"("id"),
+	PRIMARY KEY("id" AUTOINCREMENT)
+)

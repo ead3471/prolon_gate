@@ -1,0 +1,84 @@
+
+Controllers list TABLE:
+
+CREATE TABLE `controllers` (
+	`id` INT(11) NOT NULL,
+	`name` VARCHAR(50) NOT NULL DEFAULT '' COLLATE 'utf8_general_ci',
+	`type` INT(11) NOT NULL DEFAULT '0',
+	`uid` INT(11) NULL DEFAULT NULL,
+	PRIMARY KEY (`id`) USING BTREE
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB
+;
+
+Table with last recieved values:
+CREATE TABLE `last_values` (
+	`id` INT(11) NOT NULL AUTO_INCREMENT,
+	`register_type` INT(11) NOT NULL,
+	`controller_id` INT(10) NOT NULL DEFAULT '0',
+	`timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	`value` FLOAT NOT NULL,
+	`register_number` INT(11) NOT NULL,
+	PRIMARY KEY (`id`) USING BTREE,
+	UNIQUE INDEX `2_last_values_un` (`register_type`, `controller_id`, `register_number`) USING BTREE,
+	INDEX `FK1` (`controller_id`) USING BTREE,
+	CONSTRAINT `2_last_values_ibfk_1_copy` FOREIGN KEY (`controller_id`) REFERENCES `prolon`.`1_controllers` (`id`) ON UPDATE RESTRICT ON DELETE RESTRICT
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB
+AUTO_INCREMENT=29649
+;
+
+Table with all recieved data
+CREATE TABLE `realtime_values` (
+	`id` INT(11) NOT NULL AUTO_INCREMENT,
+	`register_type` INT(11) NOT NULL,
+	`controller_id` INT(10) NOT NULL DEFAULT '0',
+	`timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	`value` FLOAT NOT NULL,
+	`register_number` INT(11) NOT NULL,
+	PRIMARY KEY (`id`) USING BTREE,
+	UNIQUE INDEX `register_type_controller_id_timestamp_register_number` (`register_type`, `controller_id`, `timestamp`, `register_number`) USING BTREE,
+	INDEX `FK1` (`controller_id`) USING BTREE,
+	CONSTRAINT `FK_1_realtime_values_1_controllers_copy` FOREIGN KEY (`controller_id`) REFERENCES `prolon`.`1_controllers` (`id`) ON UPDATE RESTRICT ON DELETE RESTRICT
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB
+AUTO_INCREMENT=29670
+;
+
+Table with information about last update in remote database:
+CREATE TABLE `update_info` (
+	`controller_id` INT(11) NOT NULL,
+	`last_update` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	PRIMARY KEY (`controller_id`) USING BTREE
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB
+;
+
+
+Table with requests to modbus devices
+CREATE TABLE `3_controllers_requests` (
+	`id` INT(11) NOT NULL AUTO_INCREMENT,
+	`controller_id` INT(11) NOT NULL DEFAULT '0',
+	`register_type` INT(11) NOT NULL,
+	`register_number` INT(11) NOT NULL DEFAULT '0',
+	`value` DOUBLE NOT NULL DEFAULT '0',
+	`exec_status` VARCHAR(30) NOT NULL DEFAULT '0' COLLATE 'utf8_general_ci',
+	`update_time` TIMESTAMP NOT NULL DEFAULT '0000-00-00 00:00:00',
+	`string_value` CHAR(96) NULL DEFAULT '' COLLATE 'utf8_general_ci',
+	`text_value` TEXT NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	PRIMARY KEY (`id`) USING BTREE,
+	UNIQUE INDEX `controller_id_register_type_register_number` (`controller_id`, `register_type`, `register_number`) USING BTREE
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB
+ROW_FORMAT=COMPACT
+AUTO_INCREMENT=31115
+;
+
+
+
+

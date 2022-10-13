@@ -1,0 +1,268 @@
+<?php
+
+
+/**
+ *
+ * @var array $config
+ * @var array $controller_measure ;
+ * @var string $controller_name ;
+ * @var string $server_tz ;
+ */
+
+
+$set_point = number_format(celsius_to_fahrenheit($config["measure"][7]["value"]), 1);
+$supply_water = number_format(celsius_to_fahrenheit($config["measure"][0]["value"]), 1);
+$return_water = number_format(celsius_to_fahrenheit($config["measure"][2]["value"]), 1);
+$decoded_alert = get_M2000_alert_status_from_int($config["measure"][20]["value"]);
+$outside_temp = number_format(celsius_to_fahrenheit($config["measure"][1]["value"]), 1);
+
+$last_update_timestamp = $config["measure"][7]["timestamp"];
+
+$datetime = new DateTime($last_update_timestamp, new DateTimeZone($server_tz));
+$datetime->setTimezone(new DateTimeZone($server_tz));
+$last_update_str = $datetime->format('m/d/Y  H:i:s');
+
+
+?>
+
+<style>
+
+    .blinking {
+        animation: blinker 1s linear infinite;
+    }
+
+    @keyframes blinker {
+        50% {
+            opacity: 0;
+        }
+    }
+
+    div.box_1 {
+        display: inline-block;
+        border: 3px solid grey;
+        width: 25%;
+        margin: 0.5%;
+        text-align: center;
+        vertical-align: middle;
+        overflow: hide;
+        border-radius: 1em;
+        background-color: rgba(35, 82, 124, 1);
+        transition: 0.5s;
+    }
+
+    div.box_1:hover {
+        background-color: rgba(35, 82, 124, 0.8);
+        border: 3px solid rgba(240, 173, 78, 1);
+        box-shadow: 0 12px 16px 0 rgba(0, 0, 0, 0.24), 0 17px 50px 0 rgba(0, 0, 0, 0.19);
+    }
+
+    div.box_1 h2 {
+        color: #ffffff;
+        letter-spacing: 1px;
+    }
+
+    div.box_1 div {
+        width: 100%;
+        height: 100%;
+        border-radius: 0em 0em 0.8em 0.8em;
+        background-color: rgba(255, 255, 255, 0.85);
+        margin: auto;
+        text-align: center;
+        vertical-align: middle;
+        overflow: none;
+    }
+
+
+    p.view_temp_up {
+        font-size: 3.5em;
+        margin: 0;
+    }
+
+    p.view_temp_down {
+        font-size: 1.75em;
+        margin: 0;
+        margin-top: 0.75em;
+        margin-bottom: 0.25em;
+    }
+
+
+    @media screen and (max-width: 1300px) {
+        div.box_1 {
+            margin: auto;
+            margin-top: 1em;
+            display: inline-block;
+            width: 45%;
+            margin-right: 1.5%;
+            overflow: none;
+            padding 0.25em;
+        }
+
+
+    }
+
+    @media screen and (max-width: 600px) {
+        div.box_1 {
+            margin: auto;
+            margin-top: 1em;
+            display: inline-block;
+            width: 99%;
+            overflow: none;
+            padding 0.25em;
+        }
+    }
+
+
+    .reload_status {
+        bottom: 0.0em;
+
+        right: 0;
+        left: 50%;
+        border: 3px solid #386FAA;
+        border-radius: 10px;
+        cursor: pointer;
+        color: #FFFFFF;
+        background-color: rgba(73, 64, 64, 1);
+        text-align: center;
+
+        vertical-align: bottom;
+        font-size: 1em;
+    }
+
+
+</style>
+
+
+<div class="box_1">
+    <h2>BOILER STATUS
+        <?php
+        echo "<br>" . $config["name"]; ?>
+    </h2>
+    <h2 id="m2000_status_update_time_<?php echo $config["id"] ?>" style="font-weight: 100;">
+
+        <?php echo $last_update_str;
+        ?>
+
+    </h2>
+
+    <div>
+        <hr/>
+
+
+        <p class="view_temp_down" style="horiz-align:center;display:inline-block;  position:relative; bottom:10px;">
+            <b>Alert status</b>
+        </p>
+        <br>
+        <p class="view_temp_down"
+           style="horiz-align:center;display:inline-block;  margin-top: 0.3em;color:<?php echo $decoded_alert["color"]; ?>">
+            <span id="m2000_status_alert_<?php echo $config["id"] ?>"><b> <?php echo $decoded_alert["text"]; ?></b></span>
+        </p>
+
+
+        <hr/>
+        <p class="view_temp_down" style="display:inline-block; horiz-align:center; position:relative; bottom:10px;"><b>Set-Point
+        </p>
+        <br>
+        <p class="view_temp_up" style="horiz-align:center;display:inline-block; "><span
+                    id="m2000_status_setpoint_<?php echo $config["id"] ?>"><?php echo $set_point; ?></span>
+            <sup>&#8457</sup></b></p>
+        <hr/>
+
+        <p class="view_temp_down tooltip"
+           style="display:inline-block; horiz-align:center; position:relative; bottom:10px;"><b>Supply-Water
+        </p>
+        <br>
+        <p class="view_temp_up" style="display:inline-block;horiz-align:center; "><span
+                    id="m2000_status_supply_water_<?php echo $config["id"] ?>"> <?php echo $supply_water; ?></span><sup>&#8457</sup></b>
+        </p>
+        <hr/>
+
+        <p class="view_temp_down" style="display:inline-block; horiz-align:center; position:relative; bottom:10px;"><b>Return-Water
+        </p>
+        <br>
+        <p class="view_temp_up" style="display:inline-block;horiz-align:center; "><span
+                    id="m2000_status_return_water_<?php echo $config["id"] ?>"> <?php echo $return_water; ?></span><sup>&#8457</sup></b>
+        </p>
+
+        <hr/>
+        <p class="view_temp_down" style="display:inline-block; horiz-align:center; position:relative; bottom:10px;"><b>Outside
+                temp
+        </p>
+        <br>
+        <p class="view_temp_up" style="display:inline-block;horiz-align:center; "><span
+                    id="m2000_status_outside_temp_<?php echo $config["id"] ?>"> <?php echo $outside_temp; ?></span><sup>&#8457</sup></b>
+        </p>
+        <br>
+        <hr/>
+
+        <p>
+            <input id="m2000_status_reload_<?php echo $config["id"]; ?>" type="button" value="RELOAD"
+                   class="reload_status"/>
+
+        </p>
+        <br>
+
+
+    </div>
+
+    <script>
+        {
+            let block_params = JSON.parse('<?php echo json_encode($config) ?>');
+            let id = block_params["id"]
+
+            let timestamp_element = document.getElementById("m2000_status_update_time_" + id)
+            let alert_element = document.getElementById("m2000_status_alert_"+id)
+            let setpoint_element = document.getElementById("m2000_status_setpoint_"+id)
+            let supply_element = document.getElementById("m2000_status_supply_water_"+id)
+            let return_element = document.getElementById("m2000_status_return_water_"+id)
+            let outside_element = document.getElementById("m2000_status_outside_temp_"+id)
+            let reload_element = document.getElementById("m2000_status_reload_" + id)
+
+
+
+
+
+
+            let readStatusAndUpdateValues = function (getFromBase) {
+                timestamp_element.classList.add("blinking")
+
+                let start_register_number = 0
+                let count = 21
+                let jsonResponseHandler = function (response_json) {
+                    timestamp_element.classList.remove("blinking")
+                    if ("error" in response_json) {
+                        console.log("Error received  read status:" + id + ":" + response_json["error"])
+                    } else {
+                        //console.log("Data received for controller="+id+" boiler "+boiler_number)
+                        console.log("Status read " + id + ":" + JSON.stringify(response_json))
+
+                       // console.log(Date.parse(response_json["registers"][20]["update_time"]).toString())
+                        let update_time = new Date(response_json["registers"][20]["update_time"])
+                       // console.log(date_to_string(update_time))
+
+
+                        timestamp_element.innerText=date_to_string(update_time)
+                        alert_element.innerText=get_m2000_boiler_alert_status_from_int(response_json["registers"][20]["value"])["text"]
+                        setpoint_element.innerText = celsius_to_fahrenheit(parseFloat(response_json["registers"][7]["value"])).toFixed(1)
+                        supply_element.innerText = celsius_to_fahrenheit(parseFloat(response_json["registers"][0]["value"])).toFixed(1)
+                        return_element.innerText = celsius_to_fahrenheit(parseFloat(response_json["registers"][2]["value"])).toFixed(1)
+                        outside_element.innerText = celsius_to_fahrenheit(parseFloat(response_json["registers"][1]["value"])).toFixed(1)
+
+                    }
+
+
+                }
+                readParameters(id, 4, start_register_number, count, getFromBase, null, jsonResponseHandler)
+            }
+
+
+            reload_element.onclick = function () {
+                readStatusAndUpdateValues(false)
+            }
+
+
+        }
+    </script>
+
+</div>
+
+

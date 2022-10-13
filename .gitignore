@@ -1,0 +1,13 @@
+*.db
+
+*.db-journal
+
+.vscode
+logs/*/*.log
+
+
+.DS_Store
+
+
+
+

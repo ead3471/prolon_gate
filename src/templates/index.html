@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="350"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        @import url(http://fonts.googleapis.com/css?family=Montserrat:400,700);
+
+        div, p, h1, h2, input, button, label, i, li, ul {
+        font-family: 'Montserrat', sans-serif;
+        }
+
+
+        div.header {
+        position: relative;
+        width: auto;
+        background-color: #d8e0ee;
+        margin: auto;
+        }
+
+
+        div.box_1 {
+        display: inline-block;
+        border: 3px solid grey;
+        width: 25%;
+        margin: 0.5%;
+        text-align: center;
+        vertical-align: middle;
+        overflow: hide;
+        border-radius: 1em;
+        background-color: rgba(35, 82, 124, 1);
+        transition: 0.5s;
+        }
+
+        div.box_1:hover {
+        background-color: rgba(35, 82, 124, 0.8);
+        border: 3px solid rgba(240, 173, 78, 1);
+        box-shadow: 0 12px 16px 0 rgba(0, 0, 0, 0.24), 0 17px 50px 0 rgba(0, 0, 0, 0.19);
+        }
+
+        div.box_1 h2 {
+        color: #ffffff;
+        letter-spacing: 1px;
+        }
+
+        div.box_1 div {
+        width: 100%;
+        height: 100%;
+        border-radius: 0em 0em 0.8em 0.8em;
+        background-color: rgba(255, 255, 255, 0.85);
+        margin: auto;
+        text-align: center;
+        vertical-align: middle;
+        overflow: none;
+        }
+
+
+        p.view_temp_up {
+        font-size: 0.8em;
+        margin: 0;
+        }
+
+        p.view_temp_down {
+        font-size: 0.8em;
+        margin: 0;
+        margin-top: 0.4em;
+        margin-bottom: 0.25em;
+        }
+
+
+        @media screen and (max-width: 1300px) {
+        div.box_1 {
+        margin: auto;
+        margin-top: 1em;
+        display: inline-block;
+        width: 45%;
+        margin-right: 1.5%;
+        overflow: none;
+        padding 0.25em;
+        }
+
+
+        }
+
+        @media screen and (max-width: 600px) {
+        div.box_1 {
+        margin: auto;
+        margin-top: 1em;
+        display: inline-block;
+        width: 99%;
+        overflow: none;
+        padding 0.25em;
+        }
+        }
+
+
+    </style>
+
+
+</head>
+<body>
+
+<div class="header">
+
+    <div style="text-align:center; margin:auto;"><img src="{{url_for('static', filename='img/logo.png')}}"
+                                                      alt="Company's LOGO"
+                                                      style="margin:1.25em; width:272px; height:160px;"></div>
+</div>
+
+<div style="text-align:center;">
+    <div class="box_1">
+        <h2>CONTROLLERS IN SYSTEM
+        </h2>
+
+
+        <div>
+
+            <hr/>
+            <p class="view_temp_down" style="horiz-align:center;display:inline-block;  position:relative; bottom:10px;">
+                <b>COM PORT STATUS</b>
+
+            </p>
+            <br>
+            <p class="view_temp_down"
+               style="horiz-align:center;display:inline-block;  margin-top: 0.3em;color:<?php echo $decoded_alert["
+            >
+                <b>
+                <span id="com_status">
+                    {%if com_is_open is sameas true %}
+                        {{"OPENED"}}
+                    {%else%}
+                        {{"CLOSED"}}
+                    {%endif%}</span>
+                    </b>
+            </p>
+
+            {% for id,controller in controllers.items() %}
+            <hr/>
+            <p class="view_temp_down" style="horiz-align:center;display:inline-block;  position:relative; bottom:10px;">
+                <b>{{controller.name}}</b>
+                <br>
+                <b>UID={{controller.uid}}</b>
+
+                <br>
+                {{controller.last_update}}
+            </p>
+            <br>
+            <p class="view_temp_down"
+               style="horiz-align:center;display:inline-block;  margin-top: 0.3em;color:<?php echo $decoded_alert["
+            >
+                <span id="req_status_{{id}}"><b>STATUS: {{controller.last_update_status}}</b></span>
+            </p>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+<br>
+
+    {% include "server_control.html" %}
+</div>
+
+
+
+</body>
+</html>

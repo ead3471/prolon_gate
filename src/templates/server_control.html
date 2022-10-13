@@ -1,0 +1,384 @@
+<style>
+    div.F_1 {
+    display: inline-block;
+    margin: auto;
+    margin: 1%;
+    width: 100%;
+    }
+
+    div.inputsetting {
+    background-color: rgba(51, 122, 183, 1);
+    border-radius: 1em;
+    display: inline-block;
+    border: 3px solid rgba(56, 111, 170, 0.3);
+    padding: 0.125em;
+    padding-top: 0.5em;
+    margin: 0.125em;
+    text-align: center;
+    -webkit-transition: 0.5s;
+    transition: 0.5s;
+    position: relative;
+    width: 100%;
+    }
+
+    div.input_area {
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 0em 0em 0.8em 0.8em;
+    padding: 0em 0em 3em 0em;
+    text-align: center;
+    }
+
+    .autoswitch {
+    position: relative;
+    width: 180px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.3), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    border-radius: 25px;
+    display: inline-block;
+    }
+
+    .autoswitch-checkbox {
+    display: none;
+    }
+
+    .autoswitch-label {
+    display: block;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid #625E5D;
+    border-radius: 25px;
+    }
+
+    .autoswitch-inner {
+    display: block;
+    width: 200%;
+    margin-left: -100%;
+    transition: margin 0.3s ease-in 0s;
+    }
+
+    .autoswitch-inner:before, .autoswitch-inner:after {
+    display: block;
+    float: left;
+    width: 50%;
+    height: 50px;
+    padding: 0;
+    line-height: 50px;
+    font-size: 14px;
+    color: white;
+    font-family: Trebuchet, Arial, sans-serif;
+    font-weight: bold;
+    box-sizing: border-box;
+    }
+
+    .autoswitch-inner:before {
+    content: "";
+    padding-left: 10px;
+    background-color: rgba(56, 111, 170, 0.2);
+    color: #625E5D;
+    }
+
+    .autoswitch-inner:after {
+    content: "";
+    padding-right: 10px;
+    background-color: rgba(98, 94, 93, 0.2);
+    color: #625E5D;
+    text-align: right;
+    }
+
+    .autoswitch-switch {
+    display: block;
+    width: 35px;
+    margin: 7.5px;
+    background: #625E5D;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 126px;
+    border: 2px solid #E3E3E3;
+    border-radius: 25px;
+    transition: all 0.3s ease-in 0s;
+    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.3), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    }
+
+    .autoswitch-checkbox:checked + .autoswitch-label .autoswitch-inner {
+    margin-left: 0;
+    }
+
+    .autoswitch-checkbox:checked + .autoswitch-label .autoswitch-switch {
+    right: 0px;
+    background-color: #386FAA;
+    }
+
+    .save {
+    position: absolute;
+    bottom: 0.0em;
+    right: 0.2em;
+    width: 4em;
+    padding: 0.5em;
+    border: 3px solid #386FAA;
+    border-radius: 10px;
+    cursor: pointer;
+    color: #FFFFFF;
+    background-color: rgba(73, 64, 64, 1);
+    text-align: right;
+    vertical-align: middle;
+    font-size: 1em;
+    }
+
+    span.sw_info {
+    display: inline-block;
+    position: relative;
+    margin: 0 0.5em 0 0.5em;
+    padding: 0.4em;
+    bottom: 1.0em;
+    color: white;
+    font-size: 17px;
+    text-shadow: 2px 2px 3px rgba(255, 255, 255, 0.1);
+    border: solid 2px #E3E3E3;
+    border-radius: 40px;
+    background-color: #625E5D;
+    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.3), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    cursor: pointer;
+
+    }
+
+    input.sw_info, select.sw_info {
+    display: inline-block;
+    padding: 0.25em;
+    font-size: 20px;
+    border-radius: 40px;
+    text-shadow: 2px 2px 3px rgba(255, 255, 255, 0.1);
+    border: solid 2px #E3E3E3;
+    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.3), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    cursor: pointer;
+    }
+    div.F_1 {
+    margin: auto;
+    margin-top: 1em;
+    display: inline-block;
+    width: 45%;
+    margin-right: 1.5%;
+    overflow: none;
+    padding 0.25em;
+    }
+
+
+    span.T_info {
+    display: inline-block;
+    padding: 0 0.5em 0 0.5em;
+    font-size: 21px;
+    border-radius: 40px;
+    background-color: white;
+    text-shadow: 2px 2px 3px rgba(255, 255, 255, 0.1);
+    border: solid 2px #E3E3E3;
+    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.3), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    cursor: pointer;
+
+    }
+
+    label.sw_info {
+    display: inline-block;
+    margin: auto;
+    padding: 0.4em;
+    color: white;
+    font-size: 20px;
+    text-shadow: 2px 2px 3px rgba(255, 255, 255, 0.1);
+    border: solid 2px #E3E3E3;
+    border-radius: 40px;
+    background-color: #625E5D;
+    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.3), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    cursor: pointer;
+    }
+
+    input.sw_info, select.sw_info {
+    display: inline-block;
+    padding: 0.25em;
+    font-size: 20px;
+    border-radius: 40px;
+    text-shadow: 2px 2px 3px rgba(255, 255, 255, 0.1);
+    border: solid 2px #E3E3E3;
+    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.3), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    cursor: pointer;
+    }
+    p.sw_info {
+    padding: 0.1em 0.25em;
+    font-size: 20px;
+    border-radius: 40px;
+    text-shadow: 2px 2px 3px rgba(255, 255, 255, 0.1);
+    border: solid 2px #E3E3E3;
+    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.3), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    background-color: rgba(255, 255, 255, 0.8);
+    position: absolute;
+    left: 45%;
+    bottom: 4%;
+    display: none;
+    }
+    p.sw_info {
+    left: 43%;
+    bottom: 10%;
+    }
+
+
+    span.sw_info {
+    display: inline-block;
+    position: relative;
+    margin: 0 0.5em 0 0.5em;
+    padding: 0.4em;
+    bottom: 1.0em;
+    color: white;
+    font-size: 17px;
+    text-shadow: 2px 2px 3px rgba(255, 255, 255, 0.1);
+    border: solid 2px #E3E3E3;
+    border-radius: 40px;
+    background-color: #625E5D;
+    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.3), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    cursor: pointer;
+
+    }
+    div.input_area {
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 0em 0em 0.8em 0.8em;
+    padding: 0em 0em 3em 0em;
+    text-align: center;
+    }
+
+</style>
+
+<div class="F_1">
+    <div class="inputsetting">
+        <label id="server_control_label">POLL CONTROL</label>
+        <div class="input_area">
+            <hr/>
+
+            <!--<span type="number" class="T_info">Pause time, minutes</span>
+            <br>
+            <input width="30px "type="number" class="sw_info" id="pause_time"
+                   value=5>
+            <br>
+            <br>
+
+
+
+            <span id="pause_left"
+                  onclick="pause_off(),pause_event()"
+                  class="sw_info">PAUSE OFF </span>
+
+            <div class="autoswitch">
+                <input type="checkbox" name="rcmd_mode_switch" class="autoswitch-checkbox"
+                       onchange="pause_event()"
+                       id="pause_en"
+                       value="yes" checked="yes">
+                <label class="autoswitch-label" for="pause_en">
+                    <span class="autoswitch-inner"></span>
+                    <span class="autoswitch-switch"><i style="color:white; font-size:24px; margin-top:6px;"
+                                                       class="fa">&#xf011;</i></span>
+                </label>
+            </div>
+
+            <span id="pause_right"
+                  onclick="pause_on(), pause_event()"
+                  class="sw_info">PAUSE ON</span>
+            <br/>
+                -->
+
+
+             <span id="run_left"
+                   onclick="run_off()"
+                   class="sw_info">STOP </span>
+
+            <div class="autoswitch">
+                <input type="checkbox" name="rcmd_mode_switch" class="autoswitch-checkbox"
+
+                       id="run_en"
+                       value="no"
+
+                       {% if poll_is_started is sameas true%}
+                       {{'checked'}}
+                {%endif%}
+
+                >
+                <label class="autoswitch-label" for="run_en">
+                    <span class="autoswitch-inner"></span>
+                    <span class="autoswitch-switch"><i style="color:white; font-size:24px; margin-top:6px;"
+                                                       class="fa">&#xf011;</i></span>
+                </label>
+            </div>
+
+            <span id="run_right"
+                  onclick="run_on()"
+                  class="sw_info">START</span>
+            <br/>
+            <input type="button" value="SAVE" class="save" onclick="setPollStatusAndUpdateValues()">
+        </div>
+    </div>
+    <script language="javascript">
+
+
+
+          function run_on() {
+            document.getElementById("run_en").checked = true;
+        }
+
+        function run_off() {
+            document.getElementById("run_en").checked = false;
+        }
+
+        function run_event() {
+
+        }
+
+   function setPollStatusAndUpdateValues() {
+    const httpRequest = new XMLHttpRequest();
+    poll_switch_element=document.getElementById("run_en")
+    let url = '/stop_requesting';
+
+    if(poll_switch_element.checked){
+         url = '/start_requesting';
+        }
+
+
+
+    console.log("Get values:" + url)
+    httpRequest.open("GET", url);
+    httpRequest.send();
+
+    httpRequest.onreadystatechange = (e) => {
+        if (httpRequest.readyState == 4) {
+            let response_json
+            if (httpRequest.status == 200) {
+                response_json = JSON.parse(httpRequest.responseText)
+
+
+                if (response_json['poll_status'] != poll_switch_element.checked)
+                {
+                    poll_switch_element.click()
+                }
+
+
+                if(response_json['com_status']){
+                document.getElementById("com_status").innerText="OPENED"
+                }
+                else{
+                document.getElementById("com_status").innerText="CLOSED"
+                }
+
+            } else {
+                response_json = JSON.parse("{error:\"" + httpRequest.status + "\"}")
+            }
+
+
+
+        }
+
+    }
+    }
+
+
+
+
+
+    </script>
+</div>
+
