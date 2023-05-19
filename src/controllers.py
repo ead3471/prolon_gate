@@ -1,22 +1,39 @@
-from prolon_modbus_registers import *
+import logging
+from prolon_modbus_registers import (
+    get_m2000_boiler_modbus_map,
+    ProlonValue,
+    ProlonRegister,
+    ModbusRequest,
+)
 import sqlite3 as sqlite
 from sqlite3 import Row
 import time
 import os
 from datetime import timedelta
+from datetime import datetime
 
-SCRIPT_WORK_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
+SCRIPT_WORK_DIR = os.path.realpath(
+    os.path.join(os.path.dirname(__file__), "..")
+)
 
-controllers_db = os.path.join(SCRIPT_WORK_DIR, "resources", "controllers_data.db")
+controllers_db = os.path.join(
+    SCRIPT_WORK_DIR, "resources", "controllers_data.db"
+)
 store_values_table = "realtime_values"
 controllers_table = "controllers"
-
-import logging
-
 logger = logging.getLogger("boilers")
 
 
 def remove_old_records(store_deep, remove_logger=logger):
+    """remove old records from local store database
+
+    Parameters
+    ----------
+    store_deep : int
+        storage deep in seconds
+    remove_logger : Logger
+        Logger instance
+    """
     now_timestamp = time.mktime(datetime.now().timetuple())
     oldest_record_timestamp = int(now_timestamp - store_deep)
     try:
@@ -43,19 +60,28 @@ def remove_old_records(store_deep, remove_logger=logger):
 
 
 def store_controllers_memory(controllers_list):
-    # (List[ProlonController]):->None
+    """Store all controllers readed data to the local database
+
+    Parameters
+    ----------
+    controllers_list : list[ProlonController]
+        List of Controllers with data
+    """
     try:
         con = sqlite.connect(controllers_db)
         cursor = con.cursor()
         sql = (
-            "INSERT OR IGNORE INTO "
-            + store_values_table
-            + "(controller_id,register_address,timestamp,value,register_type) VALUES (?,?,?,?,?) "
+            "INSERT OR IGNORE INTO {}"
+            "(controller_id,register_address,timestamp,value,register_type)"
+            " VALUES (?,?,?,?,?) ".format(store_values_table)
         )
 
         for controller in controllers_list:
             assert isinstance(controller, ProlonController)
-            for reg_type, registers in controller.operative_values_memory.items():
+            for (
+                reg_type,
+                registers,
+            ) in controller.operative_values_memory.items():
                 for register_address, prolon_value in registers.items():
                     assert isinstance(prolon_value, ProlonValue)
                     cursor.execute(
@@ -76,7 +102,13 @@ def store_controllers_memory(controllers_list):
 
 
 def get_controllers_in_system():
-    #TODO: load controllers from database
+    """Returns the list of Controllers, registered in system
+
+    Returns
+    -------
+    list[ProlonController]
+    """
+    # TODO: load controllers from database
     controllers = {
         1: ProlonController(
             name="Main Boiler",
@@ -84,21 +116,36 @@ def get_controllers_in_system():
             modbus_map=get_m2000_boiler_modbus_map(),
             internal_id=1,
         ),
-        1: ProlonController(
+        2: ProlonController(
             name="Pair Boiler",
             uid=3,
             modbus_map=get_m2000_boiler_modbus_map(),
             internal_id=2,
-        )
+        ),
     }
 
     for controller in controllers.values():
-            controller.add_read_input_regs_request(0, 21)
+        controller.add_read_input_regs_request(0, 21)
 
     return controllers
 
 
 def get_data_stored_after(controllers_update_info, config, logger=logger):
+    """return all controllers data from base from timestamp, setted in controllers_info
+
+    Parameters
+    ----------
+    controllers_update_info : dict[controller_id:last_update_timestamp]
+        dictionary with info about last controller update
+    config : not_used
+        --
+    logger : Logger
+       Logger instance
+
+    Returns
+    -------
+    dict{controller_id:[list[{timestamp,reg_number, reg_type, value}]]}
+    """
     con = sqlite.connect(controllers_db)
     con.row_factory = Row
     cursor = con.cursor()
@@ -108,17 +155,21 @@ def get_data_stored_after(controllers_update_info, config, logger=logger):
         assert isinstance(timestamp, datetime)
         try:
             logger.debug(
-                "Get data for controller {} after {}".format(controller_id, timestamp)
+                "Get data for controller {} after {}".format(
+                    controller_id, timestamp
+                )
             )
             sql = (
-                "SELECT * FROM "
-                + store_values_table
-                + " WHERE controller_id = "
-                + str(controller_id)
-                + " AND timestamp>"
-                + str(time.mktime(timestamp.timetuple()))
-                + " ORDER BY timestamp ASC LIMIT 10000"
+                "SELECT * FROM {}"
+                " WHERE controller_id = {}"
+                " AND timestamp>{}"
+                " ORDER BY timestamp ASC LIMIT 10000".format(
+                    store_values_table,
+                    controller_id,
+                    time.mktime(timestamp.timetuple()),
+                )
             )
+
             cursor.execute(sql)
             records = cursor.fetchall()
 
@@ -126,7 +177,9 @@ def get_data_stored_after(controllers_update_info, config, logger=logger):
             for record in records:
                 result[controller_id].append(
                     {
-                        "timestamp": timestamp.fromtimestamp(record["timestamp"]),
+                        "timestamp": timestamp.fromtimestamp(
+                            record["timestamp"]
+                        ),
                         "register_number": record["register_address"],
                         "register_type": record["register_type"],
                         "value": record["value"],
@@ -134,8 +187,11 @@ def get_data_stored_after(controllers_update_info, config, logger=logger):
                 )
         except BaseException as ex:
             logger.error(
-                "Error at get data stored after {} for controller {}:{}".format(
-                    timestamp, controller_id, ex
+                (
+                    "Error at get data stored after {}"
+                    " for controller {}:{}".format(
+                        timestamp, controller_id, ex
+                    )
                 )
             )
     cursor.close()
@@ -151,11 +207,35 @@ def create_data_forwarding_request(
     to_register_type,
     to_register_number,
 ):
+    """create write holding register request, which write values
+    from onr controller to another
+
+    Parameters
+    ----------
+    from_controller : ProlonController
+        source controller instance
+    from_register_type : int
+        type of source register
+    from_register_number : int
+        number of source register
+    to_controller : ProlonController
+        target controller instance
+    to_register_type : int
+        target register type
+    to_register_number : int
+        target register number
+
+    Returns
+    -------
+    ModbusRequest
+        ModbusRequest instance which can write valur to target controller
+    """
+
     assert isinstance(from_controller, ProlonController)
     assert isinstance(to_controller, ProlonController)
-    read_prolon_value = from_controller.operative_values_memory[from_register_type][
-        from_register_number
-    ]
+    read_prolon_value = from_controller.operative_values_memory[
+        from_register_type
+    ][from_register_number]
     assert isinstance(read_prolon_value, ProlonValue)
 
     read_value = read_prolon_value.value
@@ -164,7 +244,9 @@ def create_data_forwarding_request(
         to_register_number
     ]
     assert isinstance(write_prolon_register, ProlonRegister)
-    register_value = write_prolon_register.get_register_from_value(read_value).value
+    register_value = write_prolon_register.get_register_from_value(
+        read_value
+    ).value
 
     request = ModbusRequest.create_write_register_req(
         to_register_number, register_value, to_controller.uid
@@ -176,6 +258,20 @@ class ProlonController:
     register_types = {"HOLDING": 3, "INPUT": 4}
 
     def __init__(self, name, uid, modbus_map, internal_id=1):
+        """init the current ProlonController
+
+        Parameters
+        ----------
+        name : str
+            controller short name
+        uid : int
+            modbus uid
+        modbus_map : dict{
+            "HOLDING":[{register_number:ProlonRegister}]},
+            "INPUT":[{register_number:ProlonRegister}]}
+        internal_id : int
+           internal(database) controller id
+        """
         self.name = name  # type:str
         self.uid = uid  # type:int
         self.modbus_map = modbus_map
@@ -190,16 +286,33 @@ class ProlonController:
         )  # list of requests for operative_values_memory
         self.internal_id = internal_id
         if len(self.modbus_map["INPUT"].keys()) > 0:
-            self.max_input_register_number = max(self.modbus_map["INPUT"].keys())
+            self.max_input_register_number = max(
+                self.modbus_map["INPUT"].keys()
+            )
         else:
             self.max_input_register_number = 0
 
         if len(self.modbus_map["HOLDING"].keys()) > 0:
-            self.max_holding_register_number = max(self.modbus_map["HOLDING"].keys())
+            self.max_holding_register_number = max(
+                self.modbus_map["HOLDING"].keys()
+            )
         else:
             self.max_holding_register_number = 0
 
     def decode_modbus_responce_to_json(self, request, responce_registers):
+        """creates dict from responce registers
+
+        Parameters
+        ----------
+        request : ModdbusRequest
+            request instance
+        responce_registers : list[ProlonRegister]
+            list of response registers
+
+        Returns
+        -------
+        dict{register_number:json{name,value, timestamp}}
+        """
         type = "HOLDING"
         if request.fc == 4:
             type = "INPUT"
@@ -218,15 +331,23 @@ class ProlonController:
         return result
 
     def add_read_holding_regs_request(self, start_register, registers_count):
-        # if stop_register - start_register > 125:
-        # raise ValueError('Stop-start difference is to big!(>125)')
-        # else:
+        """add read holding registers request to requests list
+
+        Parameters
+        ----------
+        start_register : int
+            start register number
+        registers_count : int
+            registers count
+        """
         self.operative_memory_requests.append(
             ModbusRequest.create_read_hold_regs_req(
                 start_register, registers_count, self.uid
             )
         )
-        for register in range(start_register, start_register + registers_count - 1):
+        for register in range(
+            start_register, start_register + registers_count - 1
+        ):
             if register in self.modbus_map["HOLDING"]:
                 prolon_register = self.modbus_map["HOLDING"][
                     register
@@ -236,11 +357,19 @@ class ProlonController:
                 ] = prolon_register.get_value_from_register(0)
 
     def add_read_input_regs_request(self, start_register, count):
-        # if stop_register - start_register > 125:
-        # raise ValueError('Stop-start difference is to big!(>125)')
-        # else:
+        """add read input register request to requests list
+
+        Parameters
+        ----------
+        start_register : int
+            start register number
+        count : int
+            end register number
+        """
         self.operative_memory_requests.append(
-            ModbusRequest.create_read_input_regs_req(start_register, count, self.uid)
+            ModbusRequest.create_read_input_regs_req(
+                start_register, count, self.uid
+            )
         )
         for register in range(start_register, count):
             if register in self.modbus_map["INPUT"]:
@@ -256,6 +385,17 @@ class ProlonController:
     def update_memory_from_responce(
         self, responce_registers, start_register, responce_fnc
     ):
+        """update controller operative memory from modbus response bytes
+
+        Parameters
+        ----------
+        responce_registers : list[int]
+            raw register values from modnus response
+        start_register : int
+            start register number
+        responce_fnc : int
+            response function code
+        """
         register_address = start_register
         reg_types = "INPUT"
         if responce_fnc == 3:
@@ -267,8 +407,8 @@ class ProlonController:
                 prolon_register = self.modbus_map[reg_types][
                     register_address
                 ]  # type: ProlonRegister
-                value_from_controller = prolon_register.get_value_from_register(
-                    responce_register
+                value_from_controller = (
+                    prolon_register.get_value_from_register(responce_register)
                 )
                 current_memory_value = self.operative_values_memory[reg_types][
                     prolon_register.register_number
@@ -276,24 +416,17 @@ class ProlonController:
                 assert isinstance(current_memory_value, ProlonValue)
                 if (
                     current_memory_value.value != value_from_controller.value
-                    or value_from_controller.timestamp - current_memory_value.timestamp
+                    or value_from_controller.timestamp
+                    - current_memory_value.timestamp
                     >= timedelta(hours=1)
                 ):
-                    # logger.debug("Update value in {}({}):{}({}) from {}=>{}".format(
-                    # self.name
-                    # , self.uid
-                    # , value_from_controller.name
-                    # , register_address
-                    #  , current_memory_value.value
-                    #   , value_from_controller.value))
-
                     self.operative_values_memory[reg_types][
                         prolon_register.register_number
                     ] = value_from_controller
             register_address += 1
 
     def store_memory(self):
-
+        """print current operative memory to stdout"""
         print("=====HOLDING====")
         for value in self.operative_values_memory["HOLDING"].values():
             print(str(value))
