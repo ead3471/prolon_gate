@@ -193,7 +193,7 @@ def get_input_registers():
         responce = result_future.result()
         responce_values = controllers[
             int(controller_id)
-        ].decode_modbus_responce_to_json(request_to_controller, responce)
+        ].decode_modbus_response_to_json(request_to_controller, responce)
         return jsonify(responce_values)
     except BaseException as ex:
         return jsonify({"error": str(ex)})
@@ -263,7 +263,7 @@ def get_holding_registers():
             request_to_controller.execute, client=client
         )
         responce = result_future.result()
-        responce_values = controllers[controller_id].decode_modbus_responce_to_json(
+        responce_values = controllers[controller_id].decode_modbus_response_to_json(
             request_to_controller, responce
         )
         return jsonify(responce_values)

@@ -79,8 +79,8 @@ def store_controllers_memory(controllers_list):
         for controller in controllers_list:
             assert isinstance(controller, ProlonController)
             for (
-                reg_type,
-                registers,
+                    reg_type,
+                    registers,
             ) in controller.operative_values_memory.items():
                 for register_address, prolon_value in registers.items():
                     assert isinstance(prolon_value, ProlonValue)
@@ -200,12 +200,12 @@ def get_data_stored_after(controllers_update_info, config, logger=logger):
 
 
 def create_data_forwarding_request(
-    from_controller,
-    from_register_type,
-    from_register_number,
-    to_controller,
-    to_register_type,
-    to_register_number,
+        from_controller,
+        from_register_type,
+        from_register_number,
+        to_controller,
+        to_register_type,
+        to_register_number,
 ):
     """create write holding register request, which write values
     from onr controller to another
@@ -214,13 +214,13 @@ def create_data_forwarding_request(
     ----------
     from_controller : ProlonController
         source controller instance
-    from_register_type : int
+    from_register_type : str
         type of source register
     from_register_number : int
         number of source register
     to_controller : ProlonController
         target controller instance
-    to_register_type : int
+    to_register_type : str
         target register type
     to_register_number : int
         target register number
@@ -299,32 +299,30 @@ class ProlonController:
         else:
             self.max_holding_register_number = 0
 
-    def decode_modbus_responce_to_json(self, request, responce_registers):
-        """creates dict from responce registers
+    def decode_modbus_response_to_json(self, request, response_registers):
+        """creates dict from response registers
 
         Parameters
         ----------
         request : ModdbusRequest
             request instance
-        responce_registers : list[ProlonRegister]
+        response_registers : list[ProlonRegister]
             list of response registers
 
         Returns
         -------
         dict{register_number:json{name,value, timestamp}}
         """
-        type = "HOLDING"
-        if request.fc == 4:
-            type = "INPUT"
 
+        reg_type = "INPUT" if request.fc == 4 else "HOLDING"
         result = {}
         register_number = request.start
-        for register in responce_registers:
-            if register_number in self.modbus_map[type]:
+        for register in response_registers:
+            if register_number in self.modbus_map[reg_type]:
                 result[register_number] = (
-                    self.modbus_map[type][register_number]
-                    .get_value_from_register(register)
-                    .to_json()
+                    self.modbus_map[reg_type][register_number]
+                        .get_value_from_register(register)
+                        .to_json()
                 )
             register_number += 1
 
@@ -346,15 +344,14 @@ class ProlonController:
             )
         )
         for register in range(
-            start_register, start_register + registers_count - 1
+                start_register, start_register + registers_count - 1
         ):
             if register in self.modbus_map["HOLDING"]:
                 prolon_register = self.modbus_map["HOLDING"][
                     register
                 ]  # type: ProlonRegister
                 self.operative_values_memory["HOLDING"][
-                    prolon_register.register_number
-                ] = prolon_register.get_value_from_register(0)
+                    prolon_register.register_number] = prolon_register.get_value_from_register(0)
 
     def add_read_input_regs_request(self, start_register, count):
         """add read input register request to requests list
@@ -383,14 +380,14 @@ class ProlonController:
                 ] = default_value
 
     def update_memory_from_responce(
-        self, responce_registers, start_register, responce_fnc
+            self, responce_registers, start_register, responce_fnc
     ):
         """update controller operative memory from modbus response bytes
 
         Parameters
         ----------
         responce_registers : list[int]
-            raw register values from modnus response
+            raw register values from modbus response
         start_register : int
             start register number
         responce_fnc : int
@@ -415,10 +412,10 @@ class ProlonController:
                 ]
                 assert isinstance(current_memory_value, ProlonValue)
                 if (
-                    current_memory_value.value != value_from_controller.value
-                    or value_from_controller.timestamp
-                    - current_memory_value.timestamp
-                    >= timedelta(hours=1)
+                        current_memory_value.value != value_from_controller.value
+                        or value_from_controller.timestamp
+                        - current_memory_value.timestamp
+                        >= timedelta(hours=1)
                 ):
                     self.operative_values_memory[reg_types][
                         prolon_register.register_number
@@ -434,10 +431,5 @@ class ProlonController:
         for value in self.operative_values_memory["INPUT"].values():
             print(str(value))
 
-        print(
-            "total registers = "
-            + str(
-                len(self.operative_values_memory["HOLDING"])
-                + len(self.operative_values_memory["INPUT"])
-            )
-        )
+        print("total registers = {} {}".format(len(self.operative_values_memory["HOLDING"]),
+                                               len(self.operative_values_memory["INPUT"])))

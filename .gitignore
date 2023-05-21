@@ -9,5 +9,7 @@ logs/*/*.log
 .DS_Store
 
 *.toml
+venv
+.idea
 
 
