@@ -1,10 +1,10 @@
 import logging
 from prolon_modbus_registers import (
-    get_m2000_boiler_modbus_map,
     ProlonValue,
     ProlonRegister,
     ModbusRequest,
 )
+from src.controllers_registers_maps import get_m2000_boiler_modbus_map
 import sqlite3 as sqlite
 from sqlite3 import Row
 import time
