@@ -1,0 +1,9 @@
+configparser==4.0.2
+flask==1.1.4
+futures==3.4.0
+mysql-connector-python==8.0.33
+pip-chill==0.1.8
+pymodbus==2.5.3
+pymysql==0.10.1
+requests==2.27.1
+waitress==1.4.4

@@ -4,10 +4,10 @@ from flask import Flask, request, jsonify, url_for, redirect, render_template, R
 from multiprocessing import Queue
 from pymodbus.client.sync import (
     ModbusSerialClient as ModbusClient,
-)  # initialize a serial RTU client instance
+)
 import time
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from logging.handlers import TimedRotatingFileHandler
 from concurrent.futures import ThreadPoolExecutor
 from prolon_modbus_registers import (
@@ -36,9 +36,6 @@ controllers = get_controllers_in_system()
 web_requests = Queue()
 
 requests_executor = ThreadPoolExecutor(max_workers=1)
-
-
-# pushing_executor = ThreadPoolExecutor(max_workers=1)
 
 
 class CyclicTasksPusher(threading.Thread):
@@ -103,24 +100,14 @@ def init_logger(logging_level=logging.DEBUG):
     logging.getLogger("boilers").setLevel(logging_level)
 
 
-def execute_data_forwarding():
-    try:
-
-        request = create_data_forwarding_request(
-            controllers[3], "INPUT", 0, controllers[4], "HOLDING", 141
-        )
-        # srequest.execute(client)
-    except BaseException as ex:
-        server_logger.error(
-            "Data forwarding error from {}:{}:{} to {}:{}:{}".format(
-                controllers[3].name, "INPUT", 0, controllers[4].name, "HOLDING", 141
-            )
-        )
-
-
 def execute_controllers_requesting():
+    """
+    executes requests to all registered controllers
+    Returns
+    -------
+    None
+    """
     start_time = datetime.now()
-    # print("Start:" + str(datetime.now()))
     for controller in controllers.values():
         for request in controller.operative_memory_requests:
             try:
@@ -132,7 +119,6 @@ def execute_controllers_requesting():
                     result_registers, request.start, request.fc
                 )
                 controller.last_update_status = "OK"
-                # print(controller.name + ":OK")
             except BaseException as ex:
                 server_logger.error(controller.name + " request exception " + str(ex))
                 controller.last_update_status = str(ex)
@@ -140,15 +126,18 @@ def execute_controllers_requesting():
     try:
         store_controllers_memory(controllers.values())
     except BaseException as ex:
-        server_logger.error("Store db error: " + str(ex))
+        server_logger.error("Store db error: {}".format(ex))
 
     server_logger.debug(
-        " Requesting time:" + str((datetime.now() - start_time).total_seconds())
+        " Requesting time: {}".format(str((datetime.now() - start_time).total_seconds()))
     )
 
 
 @app.route("/")
 def main_page():
+    """
+    main page route. controllers statistic
+    """
     controllers_info = {
         internal_id: {
             "name": controller.name,
@@ -168,6 +157,9 @@ def main_page():
 
 @app.route("/get_server_status")
 def get_server_status():
+    """
+    returns json with controllers statuses and server connection status
+    """
     controllers_info = {
         internal_id: {"name": controller.name}
         for (internal_id, controller) in controllers.items()
@@ -180,6 +172,12 @@ def get_server_status():
 
 @app.route("/get_input_registers")
 def get_input_registers():
+    """
+
+    Returns
+    -------
+
+    """
     start = int(request.args.get("start"))
     count = int(request.args.get("count"))
     controller_id = int(request.args.get("id"))
@@ -196,11 +194,14 @@ def get_input_registers():
         ].decode_modbus_response_to_json(request_to_controller, responce)
         return jsonify(responce_values)
     except BaseException as ex:
-        return jsonify({"error": str(ex)})
+        return jsonify({"Process read input register error {}": str(ex)})
 
 
 @app.route("/stop_requesting")
 def stop_requesting():
+    """
+    stops all controllers requests and close com port
+    """
     global client, requesting_tasks_pusher
 
     server_logger.info("Stop polling")
@@ -216,6 +217,9 @@ def stop_requesting():
 
 @app.route("/start_requesting")
 def start_requesting():
+    """
+    open com port and start requesting
+    """
     global client, requesting_tasks_pusher, connection
     if not connection:
         server_logger.info("Connect serial client")
@@ -231,6 +235,9 @@ def start_requesting():
 
 @app.route("/get_raw_holding_registers")
 def get_raw_holding_registers():
+    """
+        read raw holding registers int values(vithout conversion)
+    """
     start = int(request.args.get("start"))
     count = int(request.args.get("count"))
     controller_id = int(request.args.get("id"))
@@ -253,6 +260,9 @@ def get_raw_holding_registers():
 
 @app.route("/get_holding_registers")
 def get_holding_registers():
+    """
+    read holding registers values
+    """
     start = int(request.args.get("start"))
     count = int(request.args.get("count"))
     controller_id = int(request.args.get("id"))
@@ -273,6 +283,9 @@ def get_holding_registers():
 
 @app.route("/write_holding_register")
 def write_holding_register():
+    """
+    write single holding register
+    """
     start = int(request.args.get("start"))
     value = float(request.args.get("value"))
     controller_id = int(request.args.get("id"))
@@ -281,8 +294,8 @@ def write_holding_register():
     try:
         prolon_var = (
             controllers[controller_id]
-            .modbus_map["HOLDING"][start]
-            .get_register_from_value(value)
+                .modbus_map["HOLDING"][start]
+                .get_register_from_value(value)
         )
         request_to_controller = ModbusRequest(
             6, uid=uid, start=start, value=prolon_var.value
@@ -305,6 +318,9 @@ def write_holding_register():
 
 @app.route("/write_alarm_email")
 def write_alarm_email():
+    """
+    write alarm notification email
+    """
     controller_id = int(request.args.get("id"))
     email_number = int(request.args.get("number"))
     email = str(request.args.get("email"))
@@ -322,6 +338,7 @@ def write_alarm_email():
 
 @app.route("/get_alarm_email")
 def get_alarm_email():
+    """get alarm notification email"""
     controller_id = int(request.args.get("id"))
     email_number = int(request.args.get("number"))
     try:
