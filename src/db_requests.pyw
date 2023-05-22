@@ -7,11 +7,8 @@ import time
 import json
 import logging
 from logging.handlers import TimedRotatingFileHandler
-from prolon_modbus_registers import ModbusRequest
 import requests
 import os
-
-
 
 config = {}
 
@@ -39,6 +36,12 @@ prolon_server_routes = {
 
 
 def get_config():
+    """
+    get required parameters from config file 'sync_config.ini' in the script directory
+    Returns
+    -------
+    dict of parameters
+    """
     config_file_path = os.path.join(SCRIPT_WORK_DIR, 'resources', 'sync_config.ini')
     with open(config_file_path) as config_file:
         config_parser = RawConfigParser()
@@ -68,6 +71,16 @@ def init_logger(logging_level=logging.DEBUG):
 
 
 def get_read_http_requests_from_database(mysql_connection):
+    """
+    get read controller data requests from database
+    Parameters
+    ----------
+    mysql_connection
+
+    Returns
+    -------
+    list of dicts with request parameters
+    """
     requests = []
     try:
         assert isinstance(mysql_connection, Connection)
@@ -97,7 +110,6 @@ def get_read_http_requests_from_database(mysql_connection):
                     requests.append(request)
                     logger.debug("Read request received:" + str(request))
 
-
     except BaseException as ex:
         logger.error("Error at get read requests info {}".format(ex))
     finally:
@@ -105,16 +117,29 @@ def get_read_http_requests_from_database(mysql_connection):
 
 
 def read_data_from_server_and_update_db(mysql_connection, requests_to_controllers):
+    """
+    executes all read controller data requests and update remote database
+    Parameters
+    ----------
+    mysql_connection - mysql connection instance
+    requests_to_controllers - list of requests to controllers
+
+    Returns
+    -------
+    None
+    """
     assert isinstance(mysql_connection, Connection)
     if len(read_requests_to_controller) == 0:
         return
 
-    db_update_sql = "INSERT INTO {} (controller_id,register_type,register_number,value,update_time,exec_status) VALUES (%s,%s,%s,%s,%s,%s) " \
-                    "ON DUPLICATE KEY UPDATE value=VALUES(value), update_time = VALUES(update_time), exec_status=VALUES(exec_status)".format(
-        config['requests_table'])
+    db_update_sql = "INSERT INTO {} (controller_id,register_type,register_number,value,update_time,exec_status)" \
+                    " VALUES (%s,%s,%s,%s,%s,%s) " \
+                    "ON DUPLICATE KEY UPDATE value=VALUES(value), update_time = VALUES(update_time)," \
+                    " exec_status=VALUES(exec_status)".format(config['requests_table'])
 
-    db_update_error_sql = "INSERT INTO {} (controller_id,register_type,register_number,value,update_time,exec_status) VALUES (%s,%s,%s,%s,%s,%s) " \
-                          "ON DUPLICATE KEY UPDATE  exec_status=VALUES(exec_status)".format(config['requests_table'])
+    db_update_error_sql = "INSERT INTO {} (controller_id,register_type,register_number,value,update_time,exec_status)" \
+                          " VALUES (%s,%s,%s,%s,%s,%s)" \
+                          " ON DUPLICATE KEY UPDATE  exec_status=VALUES(exec_status)".format(config['requests_table'])
 
     with mysql_connection.cursor() as cursor:
 
@@ -164,6 +189,16 @@ def read_data_from_server_and_update_db(mysql_connection, requests_to_controller
 
 
 def get_write_http_requests_from_database(mysql_connection):
+    """
+    get write controller data requests from database
+    Parameters
+    ----------
+    mysql_connection
+
+    Returns
+    -------
+    list of dicts with request parameters
+    """
     requests = {}
     try:
         assert isinstance(mysql_connection, Connection)
@@ -202,15 +237,29 @@ def get_write_http_requests_from_database(mysql_connection):
 
 
 def write_data_to_server_and_update_db(mysql_connection, requests_to_controllers):
+    """
+        executes all write controller data requests and update remote database
+        Parameters
+        ----------
+        mysql_connection - mysql connection instance
+        requests_to_controllers - list of requests to controllers
+
+        Returns
+        -------
+        None
+    """
+
     assert isinstance(mysql_connection, Connection)
     if len(requests_to_controllers) == 0:
         return
 
-    db_update_sql = "INSERT INTO {} (controller_id,register_type,register_number,value,update_time,exec_status) VALUES (%s,%s,%s,%s,%s,%s) " \
-                    "ON DUPLICATE KEY UPDATE value=VALUES(value), update_time = VALUES(update_time), exec_status=VALUES(exec_status)".format(
-        config['requests_table'])
+    db_update_sql = "INSERT INTO {} (controller_id,register_type,register_number,value,update_time,exec_status)" \
+                    " VALUES (%s,%s,%s,%s,%s,%s)" \
+                    " ON DUPLICATE KEY UPDATE value=VALUES(value), update_time = VALUES(update_time)," \
+                    " exec_status=VALUES(exec_status)".format(config['requests_table'])
 
-    db_update_error_sql = "INSERT INTO {} (controller_id,register_type,register_number,value,update_time,exec_status) VALUES (%s,%s,%s,%s,%s,%s) " \
+    db_update_error_sql = "INSERT INTO {} (controller_id,register_type,register_number,value,update_time,exec_status)" \
+                          " VALUES (%s,%s,%s,%s,%s,%s) " \
                           "ON DUPLICATE KEY UPDATE  exec_status=VALUES(exec_status)".format(config['requests_table'])
 
     with mysql_connection.cursor() as cursor:
@@ -256,6 +305,16 @@ def write_data_to_server_and_update_db(mysql_connection, requests_to_controllers
 
 
 def read_write_email_requests_from_database(mysql_connection):
+    """
+    get all write notification email requests from database
+    Parameters
+    ----------
+    mysql_connection
+
+    Returns
+    -------
+    list of requests parameters
+    """
     requests = []
     try:
         assert isinstance(mysql_connection, Connection)
@@ -290,15 +349,32 @@ def read_write_email_requests_from_database(mysql_connection):
 
 
 def write_email_data_to_server_and_update_db(mysql_connection, requests_to_controllers):
+    """
+    executes all write notification email requests
+    Parameters
+    ----------
+    mysql_connection
+        mysql connection instance
+    requests_to_controllers
+        list of requests
+
+    Returns
+    -------
+    None
+    """
     assert isinstance(mysql_connection, Connection)
     if len(requests_to_controllers) == 0:
         return
 
-    db_update_sql = "INSERT INTO {} (controller_id,register_type,register_number,string_value,update_time,exec_status) VALUES (%s,%s,%s,%s,%s,%s) " \
-                    "ON DUPLICATE KEY UPDATE string_value=VALUES(string_value), update_time = VALUES(update_time), exec_status=VALUES(exec_status)".format(
-        config['requests_table'])
+    db_update_sql = "INSERT INTO {} (controller_id,register_type,register_number,string_value,update_time,exec_status)" \
+                    " VALUES (%s,%s,%s,%s,%s,%s) " \
+                    "ON DUPLICATE KEY UPDATE string_value=VALUES(string_value), " \
+                    "update_time = VALUES(update_time)," \
+                    " exec_status=VALUES(exec_status)".format(config['requests_table'])
 
-    db_update_error_sql = "INSERT INTO {} (controller_id,register_type,register_number,string_value,update_time,exec_status) VALUES (%s,%s,%s,%s,%s,%s) " \
+    db_update_error_sql = "INSERT INTO {} " \
+                          "(controller_id,register_type,register_number,string_value,update_time,exec_status)" \
+                          " VALUES (%s,%s,%s,%s,%s,%s) " \
                           "ON DUPLICATE KEY UPDATE  exec_status=VALUES(exec_status)".format(config['requests_table'])
 
     with mysql_connection.cursor() as cursor:
@@ -332,6 +408,18 @@ def write_email_data_to_server_and_update_db(mysql_connection, requests_to_contr
 
 
 def read_email_requests_from_database(mysql_connection):
+    """
+    get all read nptification email requests from database
+    Parameters
+    ----------
+    mysql_connection
+        mysql connection instance
+
+    Returns
+    -------
+    List of dicts with requests parameters
+
+    """
     requests = []
     try:
         assert isinstance(mysql_connection, Connection)
@@ -362,15 +450,34 @@ def read_email_requests_from_database(mysql_connection):
 
 
 def read_alarm_emails_from_server_and_update_db(mysql_connection, requests_to_controllers):
+    """
+    execute all read notification emails requests and update database
+    Parameters
+    ----------
+    mysql_connection
+        mysql connection instance
+    requests_to_controllers
+        list of controllers requests
+
+    Returns
+    -------
+        None
+
+    """
     assert isinstance(mysql_connection, Connection)
     if len(requests_to_controllers) == 0:
         return
 
-    db_update_sql = "INSERT INTO {} (controller_id,register_type,register_number,string_value,update_time,exec_status) VALUES (%s,%s,%s,%s,%s,%s) " \
-                    "ON DUPLICATE KEY UPDATE string_value=VALUES(string_value), update_time = VALUES(update_time), exec_status=VALUES(exec_status)".format(
-        config['requests_table'])
+    db_update_sql = "INSERT INTO {}" \
+                    " (controller_id,register_type,register_number,string_value,update_time,exec_status)" \
+                    " VALUES (%s,%s,%s,%s,%s,%s) " \
+                    "ON DUPLICATE KEY UPDATE string_value=VALUES(string_value)," \
+                    " update_time = VALUES(update_time)," \
+                    " exec_status=VALUES(exec_status)".format(config['requests_table'])
 
-    db_update_error_sql = "INSERT INTO {} (controller_id,register_type,register_number,string_value,update_time,exec_status) VALUES (%s,%s,%s,%s,%s,%s) " \
+    db_update_error_sql = "INSERT INTO {} " \
+                          "(controller_id,register_type,register_number,string_value,update_time,exec_status)" \
+                          " VALUES (%s,%s,%s,%s,%s,%s) " \
                           "ON DUPLICATE KEY UPDATE  exec_status=VALUES(exec_status)".format(config['requests_table'])
 
     with mysql_connection.cursor() as cursor:
@@ -402,6 +509,17 @@ def read_alarm_emails_from_server_and_update_db(mysql_connection, requests_to_co
 
 
 def get_read_alarms_setup_requests_from_database(mysql_connection):
+    """
+    get read alarms requests from database
+    Parameters
+    ----------
+    mysql_connection
+        mysql connection instance
+
+    Returns
+    -------
+    list of requests paramsters
+    """
     requests = []
     try:
         assert isinstance(mysql_connection, Connection)
@@ -436,15 +554,34 @@ def get_read_alarms_setup_requests_from_database(mysql_connection):
 
 
 def read_alarms_setup_from_server_and_update_db(mysql_connection, requests_to_controllers):
+    """
+    executes all requests to controllers and update database from response data
+    Parameters
+    ----------
+    mysql_connection
+        mysql connection instance
+    requests_to_controllers
+        list of requests
+
+    Returns
+    -------
+    None
+
+    """
     assert isinstance(mysql_connection, Connection)
     if len(requests_to_controllers) == 0:
         return
 
-    db_update_sql = "INSERT INTO {} (controller_id,register_type,register_number,text_value,update_time,exec_status) VALUES (%s,%s,%s,%s,%s,%s) " \
-                    "ON DUPLICATE KEY UPDATE text_value=VALUES(text_value), update_time = VALUES(update_time), exec_status=VALUES(exec_status)".format(
-        config['requests_table'])
+    db_update_sql = "INSERT INTO {}" \
+                    " (controller_id,register_type,register_number,text_value,update_time,exec_status)" \
+                    " VALUES (%s,%s,%s,%s,%s,%s) " \
+                    "ON DUPLICATE KEY UPDATE text_value=VALUES(text_value)," \
+                    " update_time = VALUES(update_time)," \
+                    " exec_status=VALUES(exec_status)".format(config['requests_table'])
 
-    db_update_error_sql = "INSERT INTO {} (controller_id,register_type,register_number,text_value,update_time,exec_status) VALUES (%s,%s,%s,%s,%s,%s) " \
+    db_update_error_sql = "INSERT INTO {}" \
+                          " (controller_id,register_type,register_number,text_value,update_time,exec_status)" \
+                          " VALUES (%s,%s,%s,%s,%s,%s) " \
                           "ON DUPLICATE KEY UPDATE  exec_status=VALUES(exec_status)".format(config['requests_table'])
 
     with mysql_connection.cursor() as cursor:
@@ -473,15 +610,18 @@ def read_alarms_setup_from_server_and_update_db(mysql_connection, requests_to_co
                     logger.debug(readed_data)
                     update_time = datetime.fromtimestamp(int(response_json["timestamp"]))
                     cursor.execute(db_update_sql,
-                                   (controller_id, 31, register_number, readed_data, update_time, 'read_alarm_setup_ok'))
+                                   (
+                                       controller_id, 31, register_number, readed_data, update_time,
+                                       'read_alarm_setup_ok'))
 
                     if register_number == 0:
                         for alert_controller_id, controller_alerts in response_json["setup"].items():
                             for alert_number, alert_setup in controller_alerts.items():
                                 json_for_write_to_db = {alert_controller_id: {alert_number: alert_setup}}
 
-                                logger.debug("Update alert setup for controller {} alert number ={}".format(controller_id,
-                                                                                                            alert_number))
+                                logger.debug(
+                                    "Update alert setup for controller {} alert number ={}".format(controller_id,
+                                                                                                   alert_number))
                                 cursor.execute(db_update_sql, (
                                     controller_id, 31, alert_number, json.dumps(json_for_write_to_db), update_time,
                                     'read_alarm_setup_ok'))
@@ -490,7 +630,19 @@ def read_alarms_setup_from_server_and_update_db(mysql_connection, requests_to_co
             except BaseException as ex:
                 logger.error("Read alarm setup Request processing error:{}".format(ex))
 
+
 def get_write_alarms_setup_requests_from_database(mysql_connection):
+    """
+    get all write alarm setup requests from database
+    Parameters
+    ----------
+    mysql_connection
+        mysql connection instance
+
+    Returns
+    -------
+        list of requests parameters
+    """
     requests = []
     try:
         assert isinstance(mysql_connection, Connection)
@@ -514,12 +666,11 @@ def get_write_alarms_setup_requests_from_database(mysql_connection):
                 alarm_number = str(record["register_number"])
                 setup = json.dumps(request_json.values()[0][alarm_number])
                 request = {"route": prolon_server_routes["alarm"]["write"],
-                           "params": {"id": record["controller_id"]
-                               , "number": record["register_number"]}
-                    , "setup": setup}
+                           "params": {"id": record["controller_id"],
+                                      "number": record["register_number"]},
+                           "setup": setup}
                 requests.append(request)
                 logger.debug("Write alarm setup request received:" + str(request))
-
 
     except BaseException as ex:
         logger.error("Error at get write alarms setup req info {}".format(ex))
@@ -528,15 +679,33 @@ def get_write_alarms_setup_requests_from_database(mysql_connection):
 
 
 def write_alarms_setup_to_sever_and_update_db(mysql_connection, requests_to_controllers):
+    """
+    executes all write alarms setup requests and update database from responses
+    Parameters
+    ----------
+    mysql_connection
+        mysql connection instance
+    requests_to_controllers
+        list of requests
+
+    Returns
+    -------
+        None
+    """
     assert isinstance(mysql_connection, Connection)
     if len(requests_to_controllers) == 0:
         return
 
-    db_update_sql = "INSERT INTO {} (controller_id,register_type,register_number,string_value,update_time,exec_status) VALUES (%s,%s,%s,%s,%s,%s) " \
-                    "ON DUPLICATE KEY UPDATE string_value=VALUES(string_value), update_time = VALUES(update_time), exec_status=VALUES(exec_status)".format(
-        config['requests_table'])
+    db_update_sql = "INSERT INTO {}" \
+                    " (controller_id,register_type,register_number,string_value,update_time,exec_status)" \
+                    " VALUES (%s,%s,%s,%s,%s,%s) " \
+                    "ON DUPLICATE KEY UPDATE string_value=VALUES(string_value)," \
+                    " update_time = VALUES(update_time)," \
+                    " exec_status=VALUES(exec_status)".format(config['requests_table'])
 
-    db_update_error_sql = "INSERT INTO {} (controller_id,register_type,register_number,string_value,update_time,exec_status) VALUES (%s,%s,%s,%s,%s,%s) " \
+    db_update_error_sql = "INSERT INTO {}" \
+                          " (controller_id,register_type,register_number,string_value,update_time,exec_status)" \
+                          " VALUES (%s,%s,%s,%s,%s,%s) " \
                           "ON DUPLICATE KEY UPDATE  exec_status=VALUES(exec_status)".format(config['requests_table'])
 
     with mysql_connection.cursor()as cursor:
@@ -557,7 +726,8 @@ def write_alarms_setup_to_sever_and_update_db(mysql_connection, requests_to_cont
                     logger.error("Error resp received:{}".format(response_json["error"]))
 
                     cursor.execute(db_update_error_sql,
-                                   (controller_id, '31', register_number, '0', datetime.now(), 'write_alarm_setup_error'))
+                                   (controller_id, '31', register_number, '0', datetime.now(),
+                                    'write_alarm_setup_error'))
 
                     mysql_connection.commit()
 
@@ -573,6 +743,7 @@ def write_alarms_setup_to_sever_and_update_db(mysql_connection, requests_to_cont
                 logger.error("Write alarm setup Request processing error:{}".format(ex))
             finally:
                 cursor.close()
+
 
 if __name__ == '__main__':
     init_logger()
