@@ -1,7 +1,6 @@
 import mysql.connector
-import sys
 from mysql.connector import MySQLConnection
-from controllers import ProlonController, get_data_stored_after, remove_old_records
+from controllers import get_data_stored_after, remove_old_records
 from datetime import datetime, timedelta
 import time
 import logging
@@ -16,10 +15,9 @@ logger = logging.getLogger("sync")
 
 def is_time_for_removing_old_data(sync_interval_in_seconds):
     time_now = datetime.now()
-    # return True
     return (
-        time_now.hour == 8
-        and time_now.minute * 60 + time_now.second <= sync_interval_in_seconds
+            time_now.hour == 8
+            and time_now.minute * 60 + time_now.second <= sync_interval_in_seconds
     )
 
 
@@ -51,11 +49,24 @@ def init_logger(logging_level=logging.DEBUG):
 
 
 def get_controllers_last_update(mysql_connection, config):
+    """
+    return registered controllers update information
+    Parameters
+    ----------
+    mysql_connection
+        mysql connection instance
+    config
+        remote database configuration information
+
+    Returns
+    -------
+    dict of controllers data update time
+    """
     update_info = {}
     try:
         assert isinstance(mysql_connection, MySQLConnection)
         cursor = mysql_connection.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM " + config["update_info_table"])
+        cursor.execute("SELECT * FROM {}".format(config["update_info_table"]))
         records = cursor.fetchall()
 
         for record in records:
@@ -75,26 +86,31 @@ def get_controllers_last_update(mysql_connection, config):
 
 
 def store_controller_data_in_remote_base(conn, controllers_data, config):
-    assert isinstance(conn, MySQLConnection)
+    """
+    updates controllers data in remote database and updates last_updates_info table
+    Parameters
+    ----------
+    conn - mysql connection
+    controllers_data - list of local database measurements
+    config - remote database connection config
 
+    Returns
+    -------
+
+    """
+    assert isinstance(conn, MySQLConnection)
     cursor = conn.cursor()
-    values_update_sql = (
-        "INSERT INTO "
-        + config["realtime_values_table"]
-        + " (register_type,controller_id,timestamp,value,register_number) VALUES (%s,%s,%s,%s,%s) "
-        + " ON DUPLICATE KEY UPDATE value=VALUES(value)"
-    )
-    info_update_sql = (
-        "UPDATE "
-        + config["update_info_table"]
-        + " SET last_update=%s WHERE controller_id=%s"
-    )
-    last_values_update_sql = (
-        "INSERT INTO "
-        + config["last_values_table"]
-        + " (register_type,controller_id,timestamp,value,register_number) VALUES (%s,%s,%s,%s,%s) "
-        + "ON DUPLICATE KEY UPDATE value = values(value)"
-    )
+    values_update_sql = "INSERT INTO {}" \
+                        " (register_type,controller_id,timestamp,value,register_number) VALUES (%s,%s,%s,%s,%s) " \
+                        " ON DUPLICATE KEY UPDATE value=VALUES(value)".format(config["realtime_values_table"])
+
+    info_update_sql = "UPDATE {}" \
+                      " SET last_update=%s WHERE controller_id=%s".format(config["update_info_table"])
+
+    last_values_update_sql = "INSERT INTO {}" \
+                             " (register_type,controller_id,timestamp,value,register_number) VALUES (%s,%s,%s,%s,%s) " \
+                             "ON DUPLICATE KEY UPDATE value = values(value)".format(config["last_values_table"])
+
     execute_tuples = []
 
     last_controllers_data = {}
@@ -140,7 +156,7 @@ def store_controller_data_in_remote_base(conn, controllers_data, config):
             )
         except BaseException as ex:
             logger.error(
-                "Insert data for controller {} failes {}".format(controller_id, ex)
+                "Insert data for controller {} failed {}".format(controller_id, ex)
             )
             conn.rollback()
     conn.commit()
@@ -181,6 +197,6 @@ if __name__ == "__main__":
             if is_time_for_removing_old_data(int(config["sync_interval_in_seconds"])):
                 remove_old_records(60 * 60 * 24 * 10, logger)
         except BaseException as ex:
-            logger.error("remove old records error: {}", ex)
+            logger.error("Removing old records error: {}", ex)
 
         time.sleep(int(config["sync_interval_in_seconds"]))
